@@ -5,8 +5,8 @@ const Chat = () => {
   const [userMessage, setUserMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isResponseRendering, setIsResponseRendering] = useState(false);
 
-  // Load messages from localStorage when the component mounts
   useEffect(() => {
     const storedMessages = localStorage.getItem("chatMessages");
     if (storedMessages) {
@@ -14,7 +14,6 @@ const Chat = () => {
     }
   }, []);
 
-  // Save messages to localStorage whenever the messages array updates
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem("chatMessages", JSON.stringify(messages));
@@ -24,7 +23,7 @@ const Chat = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!userMessage) {
+    if (!userMessage.trim()) {
       alert("Please enter a message");
       return;
     }
@@ -33,6 +32,7 @@ const Chat = () => {
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
     setUserMessage("");
     setLoading(true);
+    setIsResponseRendering(true);
 
     try {
       const response = await fetch("http://3.12.248.21:6010/run", {
@@ -58,14 +58,31 @@ const Chat = () => {
           }))[0];
 
         if (latestAssistantMessage) {
-          setMessages((prevMessages) => {
-            const lastUserMessageIndex = prevMessages.length - 1;
-            const newMessages = prevMessages.slice(0, lastUserMessageIndex + 1);
-            return [...newMessages, latestAssistantMessage];
-          });
+          let index = 0;
+          const interval = setInterval(() => {
+            if (index <= latestAssistantMessage.content[0].length) {
+              setMessages((prevMessages) => {
+                const updatedAssistantMessage = {
+                  role: latestAssistantMessage.role,
+                  content: [
+                    latestAssistantMessage.content[0].slice(0, index),
+                  ],
+                };
+                const newMessages = [...prevMessages];
+                if (newMessages[newMessages.length - 1].role === "assistant") {
+                  newMessages[newMessages.length - 1] = updatedAssistantMessage;
+                } else {
+                  newMessages.push(updatedAssistantMessage);
+                }
+                return newMessages;
+              });
+              index++;
+            } else {
+              clearInterval(interval);
+              setIsResponseRendering(false);
+            }
+          }, 50);
         }
-      } else {
-        console.log("No messages received from the assistant.");
       }
     } catch (error) {
       console.error("Error occurred while fetching assistant's response:", error);
@@ -75,9 +92,10 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white py-2">
-      <div className="container mx-auto px-12">
-        <div className="bg-white rounded-lg p-4 h-[32rem] md:h-[40rem] lg:h-[45rem] overflow-y-auto mb-4 max-w-full">
+    <div className="h-screen flex flex-col bg-white">
+      <div className="container mx-auto px-12 flex flex-col flex-grow">
+        {/* Chat messages container */}
+        <div className="flex-grow bg-white rounded-lg p-4 overflow-y-auto max-w-full mb-4">
           {messages.length > 0 ? (
             messages.map((msg, index) => (
               <div
@@ -88,11 +106,7 @@ const Chat = () => {
                     : "bg-transparent self-start text-xl text-left mr-auto"
                 }`}
               >
-                <p>
-                  {msg.content.map((text, idx) => (
-                    <span key={idx}>{text}</span>
-                  ))}
-                </p>
+                <p>{msg.content}</p>
               </div>
             ))
           ) : (
@@ -112,30 +126,44 @@ const Chat = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="flex items-center space-x-2">
-                <span className="text-gray-500">Assistant is typing </span>
-                <div className="dot-flashing"></div>
+                <span>Assistant is typing</span>
+                <div className="blinking-cursor">|</div>
               </div>
             </motion.div>
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="flex">
+        {/* Input form fixed at the bottom */}
+        <form onSubmit={handleSubmit} className="flex w-full sticky bottom-0 bg-white p-4">
           <input
             type="text"
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
             placeholder="Ask Your Queries"
             className="flex-grow p-4 border border-gray-300 rounded-2xl mr-2 text-lg"
+            disabled={loading || isResponseRendering}
           />
           <button
             type="submit"
-            className="bg-gray-100 text-black px-6 py-3 rounded-lg hover:bg-gray-200"
-            disabled={loading} // Disable submit button during loading
+            className={`${
+              loading || isResponseRendering
+                ? "bg-gray-300 text-gray-500"
+                : "bg-gray-100 text-black hover:bg-gray-200"
+            } px-6 py-3 rounded-lg`}
+            disabled={loading || isResponseRendering}
           >
-            {loading ? (
-              <img src="/Pause.svg" alt="loading" className="bg-black rounded-full" />
+            {loading || isResponseRendering ? (
+              <img
+                src="/Pause.svg"
+                alt="loading"
+                className="bg-black rounded-full"
+              />
             ) : (
-              <img src="/ArrowUp.svg" alt="arrow" className="bg-black rounded-full" />
+              <img
+                src="/ArrowUp.svg"
+                alt="submit"
+                className="bg-black rounded-full"
+              />
             )}
           </button>
         </form>

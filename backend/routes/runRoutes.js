@@ -14,6 +14,7 @@ router.post("/", async (req, res) => {
 
     if (!threadId) {
       // Step 1: List Assistants
+      // We can eliminate this step and put the assistance id in env
       const assistantsResponse = await axios.get(
         "https://api.openai.com/v1/assistants",
         {
@@ -75,6 +76,7 @@ router.post("/", async (req, res) => {
       );
 
       // Step 4: Run the assistant after adding the message
+      /// We can eliminate and get from env
       const assistantsResponse = await axios.get(
         "https://api.openai.com/v1/assistants",
         {
@@ -156,7 +158,7 @@ async function checkRunCompletion(threadId, runId) {
         clearInterval(intervalId);
         reject(error);
       }
-    }, 5000);
+    }, 1000);
   });
 }
 
