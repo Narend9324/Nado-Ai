@@ -12,6 +12,8 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.8",
     "framer-motion": "^12.4.7",
+    "html-react-parser": "^5.2.2",
+    "marked": "^15.0.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

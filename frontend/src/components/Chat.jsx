@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import parse from "html-react-parser";
+import { marked } from "marked";
 
 const Chat = () => {
   const [userMessage, setUserMessage] = useState("");
@@ -35,7 +37,7 @@ const Chat = () => {
     setIsResponseRendering(true);
 
     try {
-      const response = await fetch("http://3.12.248.21:6010/run", {
+      const response = await fetch("http://localhost:5000/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +83,7 @@ const Chat = () => {
               clearInterval(interval);
               setIsResponseRendering(false);
             }
-          }, 50);
+          }, 25);
         }
       }
     } catch (error) {
@@ -91,11 +93,22 @@ const Chat = () => {
     }
   };
 
+  const renderContent = (msg) => {
+    if (msg.role === "assistant") {
+      // Parse markdown content from assistant
+      const parsedMarkdown = marked(msg.content.join(""));
+      return parse(parsedMarkdown);
+    } else {
+      // Render user message as plain text
+      return msg.content;
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-white">
-      <div className="container mx-auto px-12 flex flex-col flex-grow">
+      <div className="container mx-auto px-4 flex flex-col flex-grow pb-10">
         {/* Chat messages container */}
-        <div className="flex-grow bg-white rounded-lg p-4 overflow-y-auto max-w-full mb-4">
+        <div className="flex-grow bg-white rounded-lg p-4 overflow-y-auto max-w-full pb-4">
           {messages.length > 0 ? (
             messages.map((msg, index) => (
               <div
@@ -106,17 +119,18 @@ const Chat = () => {
                     : "bg-transparent self-start text-xl text-left mr-auto"
                 }`}
               >
-                <p>{msg.content}</p>
+                <p>{renderContent(msg)}</p>
               </div>
             ))
           ) : (
-            <div className="flex justify-center items-center h-full">
-              <p className="text-center text-4xl text-gray-500">
-                What can I help with?
+            <div className="flex flex-col justify-center items-center h-full">
+              <h1 className="text-5xl font-medium text-gray-700">NADO</h1>
+              <p className="text-center text-2xl text-gray-500">
+                What can I help you with?
               </p>
             </div>
           )}
-
+  
           {loading && (
             <motion.div
               className="bg-transparent self-start text-left mr-auto p-2 rounded-lg max-w-lg"
@@ -132,44 +146,57 @@ const Chat = () => {
             </motion.div>
           )}
         </div>
+  
+        {/* Input form */}
+        <form
+  onSubmit={handleSubmit}
+  className={`flex ${
+    messages.length === 0
+      ? "absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-2/5" // Centered input with 40% width
+      : "flex w-full sticky bottom-0" // Smaller, 60% width when positioned at the bottom
+  } bg-white p-4`}
+>
+  <input
+    type="text"
+    value={userMessage}
+    onChange={(e) => setUserMessage(e.target.value)}
+    placeholder="Ask Your Queries"
+    className={`flex-grow p-3 border border-gray-300 rounded-2xl mr-2 text-lg ${
+      messages.length === 0 ? "text-center p-3" : "text-left"
+    }`}
+    disabled={loading || isResponseRendering}
+  />
+  <button
+    type="submit"
+    className={`${
+      loading || isResponseRendering
+        ? "bg-gray-300 text-gray-500"
+        : "bg-gray-100 text-black hover:bg-gray-200"
+    } px-5 py-2 rounded-lg`}
+    disabled={loading || isResponseRendering}
+  >
+    {loading || isResponseRendering ? (
+      <img
+        src="/Pause.svg"
+        alt="loading"
+        className="bg-black rounded-full"
+      />
+    ) : (
+      <img
+        src="/ArrowUp.svg"
+        alt="submit"
+        className="bg-black rounded-full"
+      />
+    )}
+  </button>
+</form>
 
-        {/* Input form fixed at the bottom */}
-        <form onSubmit={handleSubmit} className="flex w-full sticky bottom-0 bg-white p-4">
-          <input
-            type="text"
-            value={userMessage}
-            onChange={(e) => setUserMessage(e.target.value)}
-            placeholder="Ask Your Queries"
-            className="flex-grow p-4 border border-gray-300 rounded-2xl mr-2 text-lg"
-            disabled={loading || isResponseRendering}
-          />
-          <button
-            type="submit"
-            className={`${
-              loading || isResponseRendering
-                ? "bg-gray-300 text-gray-500"
-                : "bg-gray-100 text-black hover:bg-gray-200"
-            } px-6 py-3 rounded-lg`}
-            disabled={loading || isResponseRendering}
-          >
-            {loading || isResponseRendering ? (
-              <img
-                src="/Pause.svg"
-                alt="loading"
-                className="bg-black rounded-full"
-              />
-            ) : (
-              <img
-                src="/ArrowUp.svg"
-                alt="submit"
-                className="bg-black rounded-full"
-              />
-            )}
-          </button>
-        </form>
+
       </div>
     </div>
   );
+  
+  
 };
 
 export default Chat;
