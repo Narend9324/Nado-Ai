@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import parse from "html-react-parser";
 import { marked } from "marked";
@@ -8,6 +8,8 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isResponseRendering, setIsResponseRendering] = useState(false);
+
+  const messagesEndRef = useRef(null); // Ref to track the end of the message list
 
   useEffect(() => {
     const storedMessages = localStorage.getItem("chatMessages");
@@ -19,6 +21,13 @@ const Chat = () => {
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem("chatMessages", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  // Scroll to the bottom of the message list whenever new messages are added
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
@@ -37,7 +46,7 @@ const Chat = () => {
     setIsResponseRendering(true);
 
     try {
-      const response = await fetch("http://localhost:5000/run", {
+      const response = await fetch("http://3.12.248.21:6010/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +92,7 @@ const Chat = () => {
               clearInterval(interval);
               setIsResponseRendering(false);
             }
-          }, 25);
+          }, 10);
         }
       }
     } catch (error) {
@@ -106,22 +115,25 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      <div className="container mx-auto px-4 flex flex-col flex-grow pb-10">
+      <div className="container mx-auto px-4 flex flex-col flex-grow pb-2">
         {/* Chat messages container */}
         <div className="flex-grow bg-white rounded-lg p-4 overflow-y-auto max-w-full pb-4">
           {messages.length > 0 ? (
-            messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-6 px-4 py-3 rounded-lg max-w-max ${
-                  msg.role === "user"
-                    ? "bg-gray-100 self-end text-xl text-right ml-auto rounded-2xl m-5 p-5"
-                    : "bg-transparent self-start text-xl text-left mr-auto"
-                }`}
-              >
-                <p>{renderContent(msg)}</p>
-              </div>
-            ))
+            <>
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`mb-6 px-4 py-3 rounded-lg max-w-max ${
+                    msg.role === "user"
+                      ? "bg-gray-100 self-end text-xl text-right ml-auto rounded-2xl m-5 p-5"
+                      : "bg-transparent self-start text-xl text-left mr-auto"
+                  }`}
+                >
+                  <p>{renderContent(msg)}</p>
+                </div>
+              ))}
+              <div ref={messagesEndRef} /> {/* Ref to track the end of messages */}
+            </>
           ) : (
             <div className="flex flex-col justify-center items-center h-full">
               <h1 className="text-5xl font-medium text-gray-700">NADO</h1>
@@ -130,7 +142,7 @@ const Chat = () => {
               </p>
             </div>
           )}
-  
+
           {loading && (
             <motion.div
               className="bg-transparent self-start text-left mr-auto p-2 rounded-lg max-w-lg"
@@ -146,57 +158,53 @@ const Chat = () => {
             </motion.div>
           )}
         </div>
-  
+
         {/* Input form */}
         <form
-  onSubmit={handleSubmit}
-  className={`flex ${
-    messages.length === 0
-      ? "absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-2/5" // Centered input with 40% width
-      : "flex w-full sticky bottom-0" // Smaller, 60% width when positioned at the bottom
-  } bg-white p-4`}
->
-  <input
-    type="text"
-    value={userMessage}
-    onChange={(e) => setUserMessage(e.target.value)}
-    placeholder="Ask Your Queries"
-    className={`flex-grow p-3 border border-gray-300 rounded-2xl mr-2 text-lg ${
-      messages.length === 0 ? "text-center p-3" : "text-left"
-    }`}
-    disabled={loading || isResponseRendering}
-  />
-  <button
-    type="submit"
-    className={`${
-      loading || isResponseRendering
-        ? "bg-gray-300 text-gray-500"
-        : "bg-gray-100 text-black hover:bg-gray-200"
-    } px-5 py-2 rounded-lg`}
-    disabled={loading || isResponseRendering}
-  >
-    {loading || isResponseRendering ? (
-      <img
-        src="/Pause.svg"
-        alt="loading"
-        className="bg-black rounded-full"
-      />
-    ) : (
-      <img
-        src="/ArrowUp.svg"
-        alt="submit"
-        className="bg-black rounded-full"
-      />
-    )}
-  </button>
-</form>
-
-
+          onSubmit={handleSubmit}
+          className={`flex ${
+            messages.length === 0
+              ? "absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-2/5" // Centered input with 40% width when no messages
+              : "sticky bottom-0 w-full" // Stick to bottom when messages exist
+          } bg-white p-4`}
+        >
+          <input
+            type="text"
+            value={userMessage}
+            onChange={(e) => setUserMessage(e.target.value)}
+            placeholder="Ask Your Queries"
+            className={`flex-grow p-3 border border-gray-300 rounded-2xl mr-2 text-lg ${
+              messages.length === 0 ? "text-center" : "text-left"
+            }`}
+            disabled={loading || isResponseRendering}
+          />
+          <button
+            type="submit"
+            className={`${
+              loading || isResponseRendering
+                ? "bg-gray-300 text-gray-500"
+                : "bg-gray-100 text-black hover:bg-gray-200"
+            } px-5 py-2 rounded-lg`}
+            disabled={loading || isResponseRendering}
+          >
+            {loading || isResponseRendering ? (
+              <img
+                src="/Pause.svg"
+                alt="loading"
+                className="bg-black rounded-full"
+              />
+            ) : (
+              <img
+                src="/ArrowUp.svg"
+                alt="submit"
+                className="bg-black rounded-full"
+              />
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
-  
-  
 };
 
 export default Chat;
