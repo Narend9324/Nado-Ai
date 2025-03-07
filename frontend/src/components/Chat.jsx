@@ -46,7 +46,7 @@ const Chat = () => {
     setIsResponseRendering(true);
 
     try {
-      const response = await fetch("http://3.12.248.21:6010/run", {
+      const response = await fetch("http://localhost:5000/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +135,7 @@ const Chat = () => {
               <div ref={messagesEndRef} /> {/* Ref to track the end of messages */}
             </>
           ) : (
-            <div className="flex flex-col justify-center items-center h-full">
+            <div className="flex flex-col justify-center items-center h-full gap-3">
               <h1 className="text-5xl font-medium text-gray-700">NADO</h1>
               <p className="text-center text-2xl text-gray-500">
                 What can I help you with?
