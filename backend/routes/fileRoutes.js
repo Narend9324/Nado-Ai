@@ -1,12 +1,14 @@
 
 const express = require('express');
 const { listFiles, uploadFile } = require('../controllers/fileController');
+const expressFileUpload = require('express-fileupload');
+
 
 const router = express.Router();
 
 // Route to list files from OpenAI API
 router.get('/', listFiles);
 
-router.post('/',uploadFile)
+router.post('/',expressFileUpload(),uploadFile)
 
 module.exports = router;
