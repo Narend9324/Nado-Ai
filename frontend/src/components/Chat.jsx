@@ -135,7 +135,7 @@ const Chat = () => {
               <div ref={messagesEndRef} /> {/* Ref to track the end of messages */}
             </>
           ) : (
-            <div className="flex flex-col justify-center items-center h-full gap-3">
+            <div className="flex flex-col justify-center items-center h-full">
               <h1 className="text-5xl font-medium text-gray-700">NADO</h1>
               <p className="text-center text-2xl text-gray-500">
                 What can I help you with?
@@ -164,7 +164,7 @@ const Chat = () => {
           onSubmit={handleSubmit}
           className={`flex ${
             messages.length === 0
-              ? "absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-2/5" // Centered input with 40% width when no messages
+              ? "absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-full max-w-lg sm:w-3/5 md:w-2/5 lg:w-1/3" // Responsive when no messages
               : "sticky bottom-0 w-full" // Stick to bottom when messages exist
           } bg-white p-4`}
         >
