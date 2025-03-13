@@ -43,3 +43,20 @@ exports.listFiles = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Delete file by ID from OpenAI API
+exports.deleteFile = async (req, res) => {
+    const { id } = req.params;  // Get the file ID from the request parameters
+
+    try {
+        const response = await axios.delete(`https://api.openai.com/v1/files/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+        });
+
+        res.json(response.data);  // Respond with the deletion result
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

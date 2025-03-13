@@ -1,6 +1,6 @@
 
 const express = require('express');
-const { listFiles, uploadFile } = require('../controllers/fileController');
+const { listFiles, uploadFile, deleteFile } = require('../controllers/fileController');
 const expressFileUpload = require('express-fileupload');
 
 
@@ -10,5 +10,7 @@ const router = express.Router();
 router.get('/', listFiles);
 
 router.post('/',expressFileUpload(),uploadFile)
+
+router.delete('/:id', deleteFile);
 
 module.exports = router;
